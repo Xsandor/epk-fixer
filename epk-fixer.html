@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EPK fixer</title>
+  <title>EPK fixer for 7z</title>
   <style>
     :root {
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
@@ -139,8 +139,11 @@
     </footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script>
+  <script type="module">
+    import SevenZip from 'https://cdn.jsdelivr.net/npm/7z-wasm@1.2.0/+esm'
+
+    const sevenZip = await SevenZip();
+
     const logEl = document.getElementById('log');
     function log(msg) {
       logEl.textContent += '\n' + msg;
@@ -148,52 +151,19 @@
     }
 
     const engineStatus = document.getElementById('engineStatus');
-    engineStatus.textContent = 'Engine: ready (JSZip)';
+    engineStatus.textContent = 'Engine: ready (7z-wasm)';
     engineStatus.style.background = '#1e3a1e';
-    engineStatus.style.borderColor = '#266a2e';
 
-    function ensureTrailingNewline(text) {
-      if (typeof text !== 'string') text = new TextDecoder('utf-8').decode(text);
-      return text.endsWith('\n') ? text : text.replace(/(?:\n?\r?)?$/, '') + '\n';
-    }
-
-    async function fixAndDownload(file) {
-      log(`Processing: ${file.name} (${file.size} bytes)`);
-      try {
-        const zip = await window.JSZip.loadAsync(file);
-        let certFound = false;
-        let changed = false;
-        for (const relPath in zip.files) {
-          if (relPath.split('/').pop().toLowerCase() === 'cert.txt') {
-            certFound = true;
-            log(`Found cert.txt`);
-            const origText = await zip.file(relPath).async('string');
-            const newText = ensureTrailingNewline(origText);
-            if (origText !== newText) {
-              zip.file(relPath, newText);
-              log('cert.txt updated with trailing newline.');
-              changed = true;
-            } else {
-              log('✅ No action taken. cert.txt already ends with a newline.');
-            }
-          }
-        }
-        if (!certFound) {
-          log('⚠️ cert.txt not found. Returning original archive unchanged.');
-          autoDownload(file, suggestOutName(file.name, 'unchanged'));
-          return;
-        }
-        if (changed) {
-          const outBlob = await zip.generateAsync({ type: 'blob' });
-          autoDownload(outBlob, suggestOutName(file.name, 'fixed'));
-          log('✅ Done. Download should start automatically.');
-        }
-        // If not changed, do nothing (already logged)
-      } catch (err) {
-        log('Error: ' + (err?.message || err));
+    function findCertPath(paths) {
+      const lower = paths.map(p => [p, p.toLowerCase()]);
+      for (const [orig, low] of lower) {
+        const base = low.split('/').pop().split('\\').pop();
+        if (base === 'cert.txt') return orig;
       }
+      return null;
     }
 
+    async function extractCertTxt(file) {
     function suggestOutName(name, suffix) {
       const dot = name.lastIndexOf('.');
       if (dot > 0) {
@@ -201,15 +171,62 @@
         const ext = name.slice(dot);
         return `${base}_${suffix}${ext}`;
       }
-      return `${name}_${suffix}.zip`;
+      return `${name}_${suffix}.7z`;
     }
 
-    function autoDownload(blobOrFile, outName) {
-      const url = URL.createObjectURL(blobOrFile);
+    function autoDownload(blob, outName) {
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = outName;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
+    }
+      log(`Processing: ${file.name} (${file.size} bytes)`);
+      try {
+        // Clean up FS before each run
+        try { sevenZip.FS.unlink('/in.epk'); } catch {}
+        try { sevenZip.FS.rmdir('/out'); } catch {}
+        // Write uploaded file to sevenZip FS
+        const buf = new Uint8Array(await file.arrayBuffer());
+        sevenZip.FS.writeFile('/in.epk', buf);
+        // Extract all files to /out
+        const args = ['x', '/in.epk', '-o/out', '-y'];
+        // log('Extracting .epk…');
+        await sevenZip.callMain(args);
+        // List files in /out
+        const list = sevenZip.FS.readdir('/out').filter(f => f !== '.' && f !== '..');
+        // log(`Archive contains: ${list.join(', ')}`);
+        const certPath = list.find(p => p.toLowerCase() === 'cert.txt');
+        if (!certPath) {
+          log('⚠️ cert.txt not found. Returning original archive unchanged.');
+          return;
+        }
+        const certData = sevenZip.FS.readFile(`/out/${certPath}`);
+        const certText = new TextDecoder('utf-8').decode(certData);
+        // log('cert.txt contents:\n---\n' + certText + '\n---');
+        // Ensure trailing newline
+        let fixedCert = certText.endsWith('\n') ? certText : certText.replace(/(?:\n?\r?)?$/, '') + '\n';
+        const changed = fixedCert !== certText;
+        if (changed) {
+          sevenZip.FS.writeFile(`/out/${certPath}`, new TextEncoder().encode(fixedCert));
+          log('Updated cert.txt: ensured trailing newline.');
+          // Re-pack all files in /out into new .epk
+          // Remove any previous /fixed.epk
+          try { sevenZip.FS.unlink('/fixed.epk'); } catch {}
+          // Build file list for archiving
+          const archiveArgs = ['a', '/fixed.epk'];
+          for (const fname of list) archiveArgs.push(`/out/${fname}`);
+          // log('Creating fixed .epk…');
+          await sevenZip.callMain(archiveArgs);
+          const outBuf = sevenZip.FS.readFile('/fixed.epk');
+          autoDownload(new Blob([outBuf], { type: 'application/octet-stream' }), suggestOutName(file.name, changed ? 'fixed' : 'unchanged'));
+          log('✅ Done. Download should start automatically.');
+        } else {
+          log('✅ No change needed: cert.txt already ends with a newline.');
+        }
+      } catch (err) {
+        log('Error: ' + (err?.message || err));
+      }
     }
 
     // UI: drag & drop + file picker
@@ -220,12 +237,13 @@
     ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
     drop.addEventListener('drop', e => {
       const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f) fixAndDownload(f).catch(err => log('Error: ' + err.message));
+      if (f) extractCertTxt(f).catch(err => log('Error: ' + err.message));
     });
     fileInput.addEventListener('change', e => {
       const f = e.target.files && e.target.files[0];
-      if (f) fixAndDownload(f).catch(err => log('Error: ' + err.message));
+      if (f) extractCertTxt(f).catch(err => log('Error: ' + err.message));
     });
+
   </script>
 </body>
 
