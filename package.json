@@ -1,0 +1,15 @@
+{
+  "name": "epk-fixer",
+  "version": "1.0.0",
+  "description": "Simple webapp to fix .epk files",
+  "scripts": {
+    "test": "playwright test",
+    "start": "npx http-server ."
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "7zip-bin": "^5.2.0",
+    "node-7z": "^3.0.0",
+    "playwright": "^1.44.0"
+  }
+}
