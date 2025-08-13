@@ -230,28 +230,29 @@
         return null;
       }
 
-      async function extractCertTxt(file) {
-        function suggestOutName(name, suffix) {
-          const dot = name.lastIndexOf(".");
-          if (dot > 0) {
-            const base = name.slice(0, dot);
-            const ext = name.slice(dot);
-            return `${base}_${suffix}${ext}`;
-          }
-          return `${name}_${suffix}.7z`;
+      function suggestOutName(name, suffix) {
+        const dot = name.lastIndexOf(".");
+        if (dot > 0) {
+          const base = name.slice(0, dot);
+          const ext = name.slice(dot);
+          return `${base}_${suffix}${ext}`;
         }
+        return `${name}_${suffix}.7z`;
+      }
 
-        function autoDownload(blob, outName) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = outName;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
-        }
+      function autoDownload(blob, outName) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = outName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
 
+      // Our main function that handles the whole "fixing" process
+      async function fixEpkFile(file) {
         log(`Processing: ${file.name} (${file.size} bytes)`);
 
         try {
@@ -340,12 +341,12 @@
       drop.addEventListener("drop", (e) => {
         const f =
           e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-        if (f) extractCertTxt(f).catch((err) => log("Error: " + err.message));
+        if (f) fixEpkFile(f).catch((err) => log("Error: " + err.message));
       });
 
       fileInput.addEventListener("change", (e) => {
         const f = e.target.files && e.target.files[0];
-        if (f) extractCertTxt(f).catch((err) => log("Error: " + err.message));
+        if (f) fixEpkFile(f).catch((err) => log("Error: " + err.message));
       });
     </script>
   </body>
