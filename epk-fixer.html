@@ -1,250 +1,352 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EPK fixer for 7z</title>
+    <style>
+      :root {
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
+      }
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EPK fixer for 7z</title>
-  <style>
-    :root {
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
-    }
+      body {
+        margin: 0;
+        padding: 28px;
+        background: #0b0e14;
+        color: #e6e6e6;
+      }
 
-    body {
-      margin: 0;
-      padding: 28px;
-      background: #0b0e14;
-      color: #e6e6e6;
-    }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 10px;
+      }
 
-    h1 {
-      font-size: 20px;
-      margin: 0 0 10px;
-    }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 10px;
+      }
 
-    h2 {
-      font-size: 18px;
-      margin: 0 0 10px;
-    }
+      a {
+        color: #a7b1c2;
+        text-decoration: none;
+      }
 
-    a {
-      color: #a7b1c2;
-      text-decoration: none;
-    }
+      a:hover {
+        text-decoration: underline;
+      }
 
-    a:hover {
-      text-decoration: underline;
-    }
+      .app {
+        max-width: 860px;
+        margin: 0 auto;
+        display: grid;
+        gap: 16px;
+      }
 
-    .app {
-      max-width: 860px;
-      margin: 0 auto;
-      display: grid;
-      gap: 16px;
-    }
+      .card {
+        background: #111626;
+        border: 1px solid #1c2440;
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+      }
 
-    .card {
-      background: #111626;
-      border: 1px solid #1c2440;
-      border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
-    }
+      .row {
+        display: grid;
+        gap: 16px;
+      }
 
-    .row {
-      display: grid;
-      gap: 16px;
-    }
+      .drop {
+        border: 2px dashed #29407f;
+        border-radius: 14px;
+        padding: 26px;
+        background: #0f1424;
+        text-align: center;
+      }
 
-    .drop {
-      border: 2px dashed #29407f;
-      border-radius: 14px;
-      padding: 26px;
-      background: #0f1424;
-      text-align: center;
-    }
+      .drop.drag {
+        background: #12204a;
+      }
 
-    .drop.drag {
-      background: #12204a;
-    }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #1f2848;
+        border: 1px solid #33407a;
+        font-size: 12px;
+      }
 
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: #1f2848;
-      border: 1px solid #33407a;
-      font-size: 12px;
-    }
+      .muted {
+        color: #a7b1c2;
+        font-size: 13px;
+      }
 
-    .muted {
-      color: #a7b1c2;
-      font-size: 13px;
-    }
+      .log {
+        font-family: ui-monospace, Menlo, Consolas, monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        background: #0f1424;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #253157;
+        max-height: 240px;
+        overflow: auto;
+      }
 
-    .log {
-      font-family: ui-monospace, Menlo, Consolas, monospace;
-      font-size: 12px;
-      white-space: pre-wrap;
-      background: #0f1424;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #253157;
-      max-height: 240px;
-      overflow: auto;
-    }
+      input[type="file"] {
+        display: none;
+      }
 
-    input[type="file"] {
-      display: none;
-    }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #2344ff;
+        border: 1px solid #2344ff;
+        color: white;
+        border-radius: 10px;
+        margin-top: 5px;
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #2344ff;
-      border: 1px solid #2344ff;
-      color: white;
-      border-radius: 10px;
-      margin-top: 5px;
-      padding: 10px 12px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="app">
-    <div class="card">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-        <h1>🛠️ EPK fixer</h1>
-        <span class="badge" id="engineStatus">Engine: not loaded</span>
+  <body>
+    <div class="app">
+      <div class="card">
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+          "
+        >
+          <h1>🛠️ EPK fixer</h1>
+          <span class="badge" id="engineStatus">Engine: not loaded</span>
+        </div>
+        <p class="muted">
+          Drop an <code>.epk</code> anywhere below. We'll ensure
+          <code>cert.txt</code> ends with a newline, then instantly download the
+          fixed .epk file. All processing happens locally in your browser.
+        </p>
+        <div id="drop" class="drop">
+          <strong>Drop .epk here</strong>
+          <br /><span class="muted">or</span><br />
+          <label class="btn" for="file">Choose file</label>
+          <input id="file" type="file" accept=".epk" />
+        </div>
       </div>
-      <p class="muted">Drop an <code>.epk</code> anywhere below. We'll ensure <code>cert.txt</code> ends
-        with a newline, then instantly download the fixed .epk file. All processing happens locally in your browser.</p>
-      <div id="drop" class="drop">
-        <strong>Drop .epk here</strong>
-        <br /><span class="muted">or</span><br />
-        <label class="btn" for="file">Choose file</label>
-        <input id="file" type="file" accept=".epk" />
+
+      <div class="card">
+        <h2>Log</h2>
+        <div id="log" class="log">Ready.</div>
       </div>
+      <footer
+        style="
+          max-width: 860px;
+          margin: 24px auto 0 auto;
+          text-align: center;
+          color: #a7b1c2;
+          font-size: 13px;
+        "
+      >
+        &copy; 2025 <a href="mailto:alex@karlborgs.com">Alexander Schmidt</a>.
+        This tool is provided as-is, without warranty of any kind. Use at your
+        own risk.
+      </footer>
     </div>
 
-    <div class="card">
-      <h2>Log</h2>
-      <div id="log" class="log">Ready.</div>
-    </div>
-    <footer style="max-width:860px;margin:24px auto 0 auto;text-align:center;color:#a7b1c2;font-size:13px;">
-      &copy; 2025 <a href="mailto:alex@karlborgs.com">Alexander Schmidt</a>. This tool is provided as-is, without warranty of any kind. Use at your own risk.
-    </footer>
-  </div>
-
-  <script type="module">
-    import SevenZip from 'https://cdn.jsdelivr.net/npm/7z-wasm@1.2.0/+esm'
-
-    const sevenZip = await SevenZip();
-
-    const logEl = document.getElementById('log');
-    function log(msg) {
-      logEl.textContent += '\n' + msg;
-      logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    const engineStatus = document.getElementById('engineStatus');
-    engineStatus.textContent = 'Engine: ready (7z-wasm)';
-    engineStatus.style.background = '#1e3a1e';
-
-    function findCertPath(paths) {
-      const lower = paths.map(p => [p, p.toLowerCase()]);
-      for (const [orig, low] of lower) {
-        const base = low.split('/').pop().split('\\').pop();
-        if (base === 'cert.txt') return orig;
-      }
-      return null;
-    }
-
-    async function extractCertTxt(file) {
-    function suggestOutName(name, suffix) {
-      const dot = name.lastIndexOf('.');
-      if (dot > 0) {
-        const base = name.slice(0, dot);
-        const ext = name.slice(dot);
-        return `${base}_${suffix}${ext}`;
-      }
-      return `${name}_${suffix}.7z`;
-    }
-
-    function autoDownload(blob, outName) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = outName;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    }
-      log(`Processing: ${file.name} (${file.size} bytes)`);
-      try {
-        // Clean up FS before each run
-        try { sevenZip.FS.unlink('/in.epk'); } catch {}
-        try { sevenZip.FS.rmdir('/out'); } catch {}
-        // Write uploaded file to sevenZip FS
-        const buf = new Uint8Array(await file.arrayBuffer());
-        sevenZip.FS.writeFile('/in.epk', buf);
-        // Extract all files to /out
-        const args = ['x', '/in.epk', '-o/out', '-y'];
-        // log('Extracting .epk…');
-        await sevenZip.callMain(args);
-        // List files in /out
-        const list = sevenZip.FS.readdir('/out').filter(f => f !== '.' && f !== '..');
-        // log(`Archive contains: ${list.join(', ')}`);
-        const certPath = list.find(p => p.toLowerCase() === 'cert.txt');
-        if (!certPath) {
-          log('⚠️ cert.txt not found. Returning original archive unchanged.');
-          return;
+    <script>
+      function isCompatibleBrowser() {
+        try {
+          // ES Modules: check for 'noModule' support
+          const script = document.createElement("script");
+          if (!("noModule" in script)) return false;
+          // TextEncoder/TextDecoder
+          if (
+            typeof TextEncoder === "undefined" ||
+            typeof TextDecoder === "undefined"
+          )
+            return false;
+          // Uint8Array/ArrayBuffer
+          if (
+            typeof Uint8Array === "undefined" ||
+            typeof ArrayBuffer === "undefined"
+          )
+            return false;
+          // Blob/URL.createObjectURL
+          if (
+            typeof Blob === "undefined" ||
+            typeof URL === "undefined" ||
+            typeof URL.createObjectURL !== "function"
+          )
+            return false;
+          // File API
+          if (typeof File === "undefined") return false;
+          // Drag & drop events
+          if (!("ondrop" in document.createElement("div"))) return false;
+          // Async/await: check for native Promise
+          if (typeof Promise === "undefined") return false;
+          return true;
+        } catch {
+          return false;
         }
-        const certData = sevenZip.FS.readFile(`/out/${certPath}`);
-        const certText = new TextDecoder('utf-8').decode(certData);
-        // log('cert.txt contents:\n---\n' + certText + '\n---');
-        // Ensure trailing newline
-        let fixedCert = certText.endsWith('\n') ? certText : certText.replace(/(?:\n?\r?)?$/, '') + '\n';
-        const changed = fixedCert !== certText;
-        if (changed) {
-          sevenZip.FS.writeFile(`/out/${certPath}`, new TextEncoder().encode(fixedCert));
-          log('Updated cert.txt: ensured trailing newline.');
-          // Re-pack all files in /out into new .epk
-          // Remove any previous /fixed.epk
-          try { sevenZip.FS.unlink('/fixed.epk'); } catch {}
-          // Build file list for archiving
-          const archiveArgs = ['a', '/fixed.epk'];
-          for (const fname of list) archiveArgs.push(`/out/${fname}`);
-          // log('Creating fixed .epk…');
-          await sevenZip.callMain(archiveArgs);
-          const outBuf = sevenZip.FS.readFile('/fixed.epk');
-          autoDownload(new Blob([outBuf], { type: 'application/octet-stream' }), suggestOutName(file.name, changed ? 'fixed' : 'unchanged'));
-          log('✅ Done. Download should start automatically.');
-        } else {
-          log('✅ No change needed: cert.txt already ends with a newline.');
-        }
-      } catch (err) {
-        log('Error: ' + (err?.message || err));
       }
-    }
 
-    // UI: drag & drop + file picker
-    const drop = document.getElementById('drop');
-    const fileInput = document.getElementById('file');
+      if (!isCompatibleBrowser()) {
+        document.body.innerHTML =
+          '<div style="padding:32px;max-width:600px;margin:40px auto;background:#111626;color:#e6e6e6;border-radius:14px;text-align:center;font-size:18px;">⚠️ Your browser is not supported.<br>Please update to the latest version of Chrome, Edge, Firefox, or Safari.</div>';
+      }
+    </script>
 
-    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
-    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
-    drop.addEventListener('drop', e => {
-      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if (f) extractCertTxt(f).catch(err => log('Error: ' + err.message));
-    });
-    fileInput.addEventListener('change', e => {
-      const f = e.target.files && e.target.files[0];
-      if (f) extractCertTxt(f).catch(err => log('Error: ' + err.message));
-    });
+    <script type="module">
+      import SevenZip from "https://cdn.jsdelivr.net/npm/7z-wasm@1.2.0/+esm";
 
-  </script>
-</body>
+      const sevenZip = await SevenZip();
 
+      // Initialize logging
+      const logEl = document.getElementById("log");
+      function log(msg) {
+        logEl.textContent += "\n" + msg;
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+
+      // Update engine status
+      const engineStatus = document.getElementById("engineStatus");
+      engineStatus.textContent = "Engine: ready (7z-wasm)";
+      engineStatus.style.background = "#1e3a1e";
+
+      // Helper functions
+      function findCertPath(paths) {
+        const lower = paths.map((p) => [p, p.toLowerCase()]);
+        for (const [orig, low] of lower) {
+          const base = low.split("/").pop().split("\\").pop();
+          if (base === "cert.txt") return orig;
+        }
+        return null;
+      }
+
+      async function extractCertTxt(file) {
+        function suggestOutName(name, suffix) {
+          const dot = name.lastIndexOf(".");
+          if (dot > 0) {
+            const base = name.slice(0, dot);
+            const ext = name.slice(dot);
+            return `${base}_${suffix}${ext}`;
+          }
+          return `${name}_${suffix}.7z`;
+        }
+
+        function autoDownload(blob, outName) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = outName;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        }
+
+        log(`Processing: ${file.name} (${file.size} bytes)`);
+
+        try {
+          // Clean up FS before each run
+          try {
+            sevenZip.FS.unlink("/in.epk");
+          } catch {}
+
+          try {
+            sevenZip.FS.rmdir("/out");
+          } catch {}
+
+          // Write uploaded file to sevenZip FS
+          const buf = new Uint8Array(await file.arrayBuffer());
+          sevenZip.FS.writeFile("/in.epk", buf);
+          // Extract all files to /out
+          const args = ["x", "/in.epk", "-o/out", "-y"];
+          // log('Extracting .epk…');
+          await sevenZip.callMain(args);
+          // List files in /out
+          const list = sevenZip.FS.readdir("/out").filter(
+            (f) => f !== "." && f !== ".."
+          );
+          // log(`Archive contains: ${list.join(', ')}`);
+          const certPath = list.find((p) => p.toLowerCase() === "cert.txt");
+          if (!certPath) {
+            log("⚠️ cert.txt not found. Returning original archive unchanged.");
+            return;
+          }
+          const certData = sevenZip.FS.readFile(`/out/${certPath}`);
+          const certText = new TextDecoder("utf-8").decode(certData);
+          // log('cert.txt contents:\n---\n' + certText + '\n---');
+          // Ensure trailing newline
+          let fixedCert = certText.endsWith("\n")
+            ? certText
+            : certText.replace(/(?:\n?\r?)?$/, "") + "\n";
+          const changed = fixedCert !== certText;
+          if (changed) {
+            sevenZip.FS.writeFile(
+              `/out/${certPath}`,
+              new TextEncoder().encode(fixedCert)
+            );
+            log("Updated cert.txt: ensured trailing newline.");
+            // Re-pack all files in /out into new .epk
+            // Remove any previous /fixed.epk
+            try {
+              sevenZip.FS.unlink("/fixed.epk");
+            } catch {}
+            // Build file list for archiving
+            const archiveArgs = ["a", "/fixed.epk"];
+            for (const fname of list) archiveArgs.push(`/out/${fname}`);
+            // log('Creating fixed .epk…');
+            await sevenZip.callMain(archiveArgs);
+            const outBuf = sevenZip.FS.readFile("/fixed.epk");
+            autoDownload(
+              new Blob([outBuf], { type: "application/octet-stream" }),
+              suggestOutName(file.name, changed ? "fixed" : "unchanged")
+            );
+            log("✅ Done. Download should start automatically.");
+          } else {
+            log("✅ No change needed: cert.txt already ends with a newline.");
+          }
+        } catch (err) {
+          log("Error: " + (err?.message || err));
+        }
+      }
+
+      // UI: drag & drop + file picker
+      const drop = document.getElementById("drop");
+      const fileInput = document.getElementById("file");
+
+      ["dragenter", "dragover"].forEach((ev) =>
+        drop.addEventListener(ev, (e) => {
+          e.preventDefault();
+          drop.classList.add("drag");
+        })
+      );
+
+      ["dragleave", "drop"].forEach((ev) =>
+        drop.addEventListener(ev, (e) => {
+          e.preventDefault();
+          drop.classList.remove("drag");
+        })
+      );
+
+      drop.addEventListener("drop", (e) => {
+        const f =
+          e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) extractCertTxt(f).catch((err) => log("Error: " + err.message));
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        const f = e.target.files && e.target.files[0];
+        if (f) extractCertTxt(f).catch((err) => log("Error: " + err.message));
+      });
+    </script>
+  </body>
 </html>
