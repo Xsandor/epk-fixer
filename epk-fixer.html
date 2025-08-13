@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EPK fixer</title>
+  <style>
+    :root {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
+    }
+
+    body {
+      margin: 0;
+      padding: 28px;
+      background: #0b0e14;
+      color: #e6e6e6;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 0 0 10px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 0 0 10px;
+    }
+
+    a {
+      color: #a7b1c2;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .app {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      background: #111626;
+      border: 1px solid #1c2440;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+    }
+
+    .row {
+      display: grid;
+      gap: 16px;
+    }
+
+    .drop {
+      border: 2px dashed #29407f;
+      border-radius: 14px;
+      padding: 26px;
+      background: #0f1424;
+      text-align: center;
+    }
+
+    .drop.drag {
+      background: #12204a;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #1f2848;
+      border: 1px solid #33407a;
+      font-size: 12px;
+    }
+
+    .muted {
+      color: #a7b1c2;
+      font-size: 13px;
+    }
+
+    .log {
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      background: #0f1424;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #253157;
+      max-height: 240px;
+      overflow: auto;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #2344ff;
+      border: 1px solid #2344ff;
+      color: white;
+      border-radius: 10px;
+      margin-top: 5px;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <h1>🛠️ EPK fixer</h1>
+        <span class="badge" id="engineStatus">Engine: not loaded</span>
+      </div>
+      <p class="muted">Drop an <code>.epk</code> anywhere below. We'll ensure <code>cert.txt</code> ends
+        with a newline, then instantly download the fixed .epk file. All processing happens locally in your browser.</p>
+      <div id="drop" class="drop">
+        <strong>Drop .epk here</strong>
+        <br /><span class="muted">or</span><br />
+        <label class="btn" for="file">Choose file</label>
+        <input id="file" type="file" accept=".epk" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Log</h2>
+      <div id="log" class="log">Ready.</div>
+    </div>
+    <footer style="max-width:860px;margin:24px auto 0 auto;text-align:center;color:#a7b1c2;font-size:13px;">
+      &copy; 2025 <a href="mailto:alex@karlborgs.com">Alexander Schmidt</a>. This tool is provided as-is, without warranty of any kind. Use at your own risk.
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += '\n' + msg;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    const engineStatus = document.getElementById('engineStatus');
+    engineStatus.textContent = 'Engine: ready (JSZip)';
+    engineStatus.style.background = '#1e3a1e';
+    engineStatus.style.borderColor = '#266a2e';
+
+    function ensureTrailingNewline(text) {
+      if (typeof text !== 'string') text = new TextDecoder('utf-8').decode(text);
+      return text.endsWith('\n') ? text : text.replace(/(?:\n?\r?)?$/, '') + '\n';
+    }
+
+    async function fixAndDownload(file) {
+      log(`Processing: ${file.name} (${file.size} bytes)`);
+      try {
+        const zip = await window.JSZip.loadAsync(file);
+        let certFound = false;
+        let changed = false;
+        for (const relPath in zip.files) {
+          if (relPath.split('/').pop().toLowerCase() === 'cert.txt') {
+            certFound = true;
+            log(`Found cert.txt`);
+            const origText = await zip.file(relPath).async('string');
+            const newText = ensureTrailingNewline(origText);
+            if (origText !== newText) {
+              zip.file(relPath, newText);
+              log('cert.txt updated with trailing newline.');
+              changed = true;
+            } else {
+              log('✅ No action taken. cert.txt already ends with a newline.');
+            }
+          }
+        }
+        if (!certFound) {
+          log('⚠️ cert.txt not found. Returning original archive unchanged.');
+          autoDownload(file, suggestOutName(file.name, 'unchanged'));
+          return;
+        }
+        if (changed) {
+          const outBlob = await zip.generateAsync({ type: 'blob' });
+          autoDownload(outBlob, suggestOutName(file.name, 'fixed'));
+          log('✅ Done. Download should start automatically.');
+        }
+        // If not changed, do nothing (already logged)
+      } catch (err) {
+        log('Error: ' + (err?.message || err));
+      }
+    }
+
+    function suggestOutName(name, suffix) {
+      const dot = name.lastIndexOf('.');
+      if (dot > 0) {
+        const base = name.slice(0, dot);
+        const ext = name.slice(dot);
+        return `${base}_${suffix}${ext}`;
+      }
+      return `${name}_${suffix}.zip`;
+    }
+
+    function autoDownload(blobOrFile, outName) {
+      const url = URL.createObjectURL(blobOrFile);
+      const a = document.createElement('a');
+      a.href = url; a.download = outName;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // UI: drag & drop + file picker
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('file');
+
+    ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', e => {
+      const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) fixAndDownload(f).catch(err => log('Error: ' + err.message));
+    });
+    fileInput.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (f) fixAndDownload(f).catch(err => log('Error: ' + err.message));
+    });
+  </script>
+</body>
+
+</html>
