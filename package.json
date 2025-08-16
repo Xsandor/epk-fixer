@@ -3,17 +3,23 @@
   "version": "1.0.0",
   "description": "Simple webapp to fix .epk files",
   "scripts": {
+    "pretest": "npm run build",
     "test": "playwright test --project=Chromium",
-    "test:full": "playwright test",
-    "test:quick": "playwright test --project=Chromium",
+    "pretest:e2e": "npm run build",
+    "test:e2e": "playwright test --project=Chromium",
+    "pretest:e2e-full": "npm run build",
+    "test:e2e-full": "playwright test",
+    "test:unit": "vitest",
     "start": "npx http-server .",
-    "build": "node build.js"
+    "build": "node build/index.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
     "7zip-bin": "^5.2.0",
     "esbuild": "^0.25.9",
+    "jsdom": "^26.1.0",
     "node-7z": "^3.0.0",
-    "playwright": "^1.44.0"
+    "playwright": "^1.44.0",
+    "vitest": "^3.2.4"
   }
 }

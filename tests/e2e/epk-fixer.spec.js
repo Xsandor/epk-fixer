@@ -19,7 +19,7 @@ async function extractWith7z(zipPath, outDir) {
 }
 
 const testFilesDir = path.join(__dirname, "./files");
-const htmlPath = path.resolve(__dirname, "../epk-fixer.html");
+const htmlPath = path.resolve(process.cwd(), 'epk-fixer.html');
 const fileUrl = pathToFileURL(htmlPath).href;
 
 const testCases = [
@@ -47,6 +47,12 @@ const testCases = [
     broken: "X-Gate.epk",
   },
 ];
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__PLAYWRIGHT_TEST__ = true;
+  });
+});
 
 test.describe.parallel("EPK Fixer Webapp", () => {
   test.beforeEach(async ({ page }) => {

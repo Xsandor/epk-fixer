@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EPK fixer for 7z</title>
-    <link rel="stylesheet" href="epk-fixer.css" />
+    <title>EPK fixer</title>
+    <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="app">
       <div class="card">
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <header>
           <h1>🛠️ EPK fixer</h1>
           <span class="badge" id="engineStatus">Engine: not loaded</span>
-        </div>
+        </header>
         <p class="muted">
           Drop an <code>.epk</code> anywhere below. We'll ensure <code>cert.txt</code> ends with a newline, then instantly download the fixed .epk file. All processing happens locally in your browser.
         </p>
@@ -27,10 +27,10 @@
         <h2>Log</h2>
         <div id="log" class="log">Ready.</div>
       </div>
-      <footer style="max-width: 860px; margin: 24px auto 0 auto; text-align: center; color: #a7b1c2; font-size: 13px;">
+      <footer>
         &copy; 2025 <a href="mailto:alex@karlborgs.com">Alexander Schmidt</a>. This tool is provided as-is, without warranty of any kind. Use at your own risk.
       </footer>
     </div>
-    <script src="epk-fixer.js" type="module"></script>
+    <script src="script.js" type="module"></script>
   </body>
 </html>

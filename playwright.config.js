@@ -2,6 +2,7 @@ const os = require("os");
 const { devices } = require("@playwright/test");
 
 module.exports = {
+  testDir: './tests/e2e',
   workers: Math.max(2, Math.floor(os.cpus().length / 2)), // Use half of available CPUs, minimum 2
   timeout: 10000, // 30s per test
   retries: 0, // No retries by default
