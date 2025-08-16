@@ -1,0 +1,91 @@
+/* Extracted from epk-fixer.html */
+:root {
+	font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+		Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans";
+}
+body {
+	margin: 0;
+	padding: 28px;
+	background: #0b0e14;
+	color: #e6e6e6;
+}
+h1 {
+	font-size: 20px;
+	margin: 0 0 10px;
+}
+h2 {
+	font-size: 18px;
+	margin: 0 0 10px;
+}
+a {
+	color: #a7b1c2;
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+.app {
+	max-width: 860px;
+	margin: 0 auto;
+	display: grid;
+	gap: 16px;
+}
+.card {
+	background: #111626;
+	border: 1px solid #1c2440;
+	border-radius: 14px;
+	padding: 16px;
+	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+.row {
+	display: grid;
+	gap: 16px;
+}
+.drop {
+	border: 2px dashed #29407f;
+	border-radius: 14px;
+	padding: 26px;
+	background: #0f1424;
+	text-align: center;
+}
+.drop.drag {
+	background: #12204a;
+}
+.badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: #1f2848;
+	border: 1px solid #33407a;
+	font-size: 12px;
+}
+.muted {
+	color: #a7b1c2;
+	font-size: 13px;
+}
+.log {
+	font-family: ui-monospace, Menlo, Consolas, monospace;
+	font-size: 12px;
+	white-space: pre-wrap;
+	background: #0f1424;
+	padding: 12px;
+	border-radius: 10px;
+	border: 1px solid #253157;
+	max-height: 240px;
+	overflow: auto;
+}
+input[type="file"] {
+	display: none;
+}
+.btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: #2344ff;
+	border: 1px solid #2344ff;
+	color: white;
+	border-radius: 10px;
+	margin-top: 5px;
+	padding: 10px 12px;
+	cursor: pointer;
+}
