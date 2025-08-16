@@ -9,7 +9,7 @@
     "test:e2e": "playwright test --project=Chromium",
     "pretest:e2e-full": "npm run build",
     "test:e2e-full": "playwright test",
-    "test:unit": "vitest",
+    "test:unit": "vitest run",
     "start": "npx http-server .",
     "build": "node build/index.js"
   },

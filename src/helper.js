@@ -38,3 +38,16 @@ export function suggestOutName(name, suffix) {
 export function ensureTrailingNewline(text) {
   return text.endsWith("\n") ? text : text.replace(/(?:\n?\r?)?$/, "") + "\n";
 }
+
+export function suggestZipName(ts = Date.now(), prefix = 'epks') {
+  // Use UTC components to keep the name consistent across environments
+  const d = new Date(ts);
+  const pad = (n) => String(n).padStart(2, '0');
+  const yyyy = d.getUTCFullYear();
+  const mm = pad(d.getUTCMonth() + 1);
+  const dd = pad(d.getUTCDate());
+  const hh = pad(d.getUTCHours());
+  const mi = pad(d.getUTCMinutes());
+  const ss = pad(d.getUTCSeconds());
+  return `${prefix}_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.zip`;
+}

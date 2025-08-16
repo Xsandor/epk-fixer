@@ -156,4 +156,47 @@ test.describe.parallel("EPK Fixer Webapp", () => {
     });
     await expect(page.locator("#drop")).toHaveClass(/drag/);
   });
+
+  test('multiple files selection creates a zip with fixed epks', async ({ page }, testInfo) => {
+    const outDir = testInfo.outputPath(`multi-${crypto.randomBytes(6).toString('hex')}`);
+    fs.mkdirSync(outDir, { recursive: true });
+
+    await page.goto(fileUrl);
+    await expect(page.locator('#engineStatus')).toContainText('Engine: ready');
+
+    const source1 = path.join(testFilesDir, 'MC764323.epk');
+    const source2 = path.join(testFilesDir, '098M0423.epk');
+
+    const download = await (async () => {
+      const dlPromise = page.waitForEvent('download');
+      await page.setInputFiles('#file', [source1, source2]);
+      return await dlPromise;
+    })();
+
+    // we now expect a single combined .epk
+    const suggested = download.suggestedFilename();
+    expect(suggested).toMatch(/^EPK_Package_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.epk$/);
+    const epkPath = path.join(outDir, suggested);
+    await download.saveAs(epkPath);
+
+    // extract outer epk to outDir
+    await new Promise((resolve, reject) => {
+      const s = Seven.extractFull(epkPath, outDir, { $bin: path7za });
+      s.on('end', resolve);
+      s.on('error', reject);
+    });
+
+    // verify SM800A_Upgrade_Source.7z and cert.txt exist
+    const innerPath = path.join(outDir, 'SM800A_Upgrade_Source.7z');
+    const certPath = path.join(outDir, 'cert.txt');
+    expect(fs.existsSync(innerPath)).toBeTruthy();
+    expect(fs.existsSync(certPath)).toBeTruthy();
+
+    // compute sha256 of innerPath and compare with cert.txt first token
+    const innerBuf = fs.readFileSync(innerPath);
+    const hash = crypto.createHash('sha256').update(innerBuf).digest('hex');
+    const cert = fs.readFileSync(certPath, 'utf8');
+    const certHash = cert.split(/\s+/)[0];
+    expect(certHash).toBe(hash);
+  });
 });

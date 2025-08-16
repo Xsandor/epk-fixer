@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>EPK fixer</title>
+  <title>EPK fixer</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -14,13 +14,17 @@
           <span class="badge" id="engineStatus">Engine: not loaded</span>
         </header>
         <p class="muted">
-          Drop an <code>.epk</code> anywhere below. We'll ensure <code>cert.txt</code> ends with a newline, then instantly download the fixed .epk file. All processing happens locally in your browser.
+          Drop one or more <code>.epk</code> files below. We'll ensure compatibility with AK-SM 800A v4.3.1, then instantly download the fixed .epk file.
+        </p>
+        <p class="muted">
+          All processing happens locally in your browser.
         </p>
         <div id="drop" class="drop">
           <strong>Drop .epk here</strong>
           <br /><span class="muted">or</span><br />
           <label class="btn" for="file">Choose file</label>
-          <input id="file" type="file" accept=".epk" />
+          <input id="file" type="file" accept=".epk" multiple />
+          <div id="drop-hint" class="muted" style="margin-top:12px;">Tip: Upload one <code>.epk</code> to fix it, or select multiple <code>.epk</code> files to combine them into a single fixed package.</div>
         </div>
       </div>
       <div class="card">

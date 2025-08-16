@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { isCompatibleBrowser, suggestOutName, ensureTrailingNewline } from '../../src/helper.js';
+import { suggestZipName } from '../../src/helper.js';
 
 describe('isCompatibleBrowser', () => {
   let originalTextEncoder, originalTextDecoder, originalDocument, originalUint8Array, originalArrayBuffer, originalBlob, originalURL, originalFile, originalPromise;
@@ -68,5 +69,14 @@ describe('ensureTrailingNewline', () => {
   });
   it('does not change text with trailing newline', () => {
     expect(ensureTrailingNewline('abc\n')).toBe('abc\n');
+  });
+});
+
+describe('suggestZipName', () => {
+  it('returns timestamped name in UTC format', () => {
+    // Use a fixed timestamp: 2020-01-02T03:04:05Z
+    const ts = Date.UTC(2020, 0, 2, 3, 4, 5);
+    const name = suggestZipName(ts, 'epks');
+    expect(name).toBe('epks_2020-01-02_03-04-05.zip');
   });
 });
