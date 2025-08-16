@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Simple webapp to fix .epk files",
   "scripts": {
-  "test": "playwright test",
-  "start": "npx http-server .",
-  "build": "node build.js"
+    "test": "playwright test --project='Chromium'",
+    "test:full": "playwright test",
+    "test:quick": "playwright test --project='Chromium'",
+    "start": "npx http-server .",
+    "build": "node build.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
