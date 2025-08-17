@@ -11,15 +11,18 @@
     "test:e2e-full": "playwright test",
     "test:unit": "vitest run",
     "start": "npx http-server .",
+    "prestart": "npm run build",
     "build": "node build/index.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.54.2",
     "7zip-bin": "^5.2.0",
     "esbuild": "^0.25.9",
+    "http-server": "^14.1.1",
     "jsdom": "^26.1.0",
     "node-7z": "^3.0.0",
     "playwright": "^1.44.0",
+    "sharp": "^0.32.1",
     "vitest": "^3.2.4"
   }
 }

@@ -10,6 +10,12 @@ module.exports = {
     headless: true,
     baseURL: "http://localhost:8080",
   },
+  // Start a lightweight static server for tests so pages are loaded over http(s)
+  webServer: {
+    command: 'npx http-server . -p 8080',
+    port: 8080,
+    reuseExistingServer: true,
+  },
   projects: [
     {
       name: "Chromium",

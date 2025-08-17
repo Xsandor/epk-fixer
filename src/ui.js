@@ -7,6 +7,30 @@ if (!isCompatibleBrowser()) {
     '<div style="padding:32px;max-width:600px;margin:40px auto;background:#111626;color:#e6e6e6;border-radius:14px;text-align:center;font-size:18px;">⚠️ Your browser is not supported.<br>Please update to the latest version of Chrome, Edge, Firefox, or Safari.</div>';
 }
 
+const BRAND = "EPK Fixer";
+
+// Detect standalone (PWA installed) mode
+function isStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true; // iOS
+}
+
+// Title policy:
+// - Browser/tab: "<section> — <brand>"
+// - Installed PWA: "<section>"  (Windows will prepend "<brand> - ")
+function setTitle() {
+  if (isStandalone()) {
+    document.title = "";
+  } else {
+    document.title = BRAND;
+  }
+}
+
+// React to display-mode changes (e.g., when opened as an app)
+const dm = window.matchMedia('(display-mode: standalone)');
+dm.addEventListener?.('change', () => setTitle());
+setTitle()
+
 const { default: SevenZip } = await import("https://cdn.jsdelivr.net/npm/7z-wasm@1.2.0/+esm");
 // instantiate 7z-wasm with no-op print handlers to keep the console silent
 const sevenZip = await SevenZip({ print: () => { } });

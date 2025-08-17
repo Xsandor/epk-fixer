@@ -19,8 +19,13 @@ async function extractWith7z(zipPath, outDir) {
 }
 
 const testFilesDir = path.join(__dirname, "./files");
+// Prefer loading the built page via the test server baseURL. If Playwright
+// doesn't provide a baseURL, fall back to file:// for local manual runs.
 const htmlPath = path.resolve(process.cwd(), 'epk-fixer.html');
-const fileUrl = pathToFileURL(htmlPath).href;
+// Tests run a local static server on port 8080 (see playwright.config.js).
+// Use that server URL to ensure pages are loaded over http:// and avoid
+// file:// origin issues in WebKit/Safari.
+const fileUrl = 'http://localhost:8080/epk-fixer.html';
 
 const testCases = [
   {
