@@ -3,30 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#111626">
-  <title>EPK fixer</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#111626" />
+    <link rel="icon" type="image/png" href="icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <title>EPK fixer</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="app">
       <div class="card">
         <header>
-          <h1>🛠️ EPK fixer</h1>
+          <img src="icons/icon-32.png" height="32" />
+          <h1>EPK fixer</h1>
           <span class="badge" id="engineStatus">Engine: not loaded</span>
         </header>
         <p class="muted">
-          Drop one or more <code>.epk</code> files below. We'll ensure compatibility with AK-SM 800A v4.3.1, then instantly download the fixed .epk file.
+          Drop one or more <code>.epk</code> files below. We'll ensure
+          compatibility with AK-SM 800A v4.3.1, then instantly download the
+          fixed .epk file.
         </p>
-        <p class="muted">
-          All processing happens locally in your browser.
-        </p>
+        <p class="muted">All processing happens locally in your browser.</p>
         <div id="drop" class="drop">
           <strong>Drop .epk here</strong>
           <br /><span class="muted">or</span><br />
           <label class="btn" for="file">Choose file</label>
           <input id="file" type="file" accept=".epk" multiple />
-          <div id="drop-hint" class="muted" style="margin-top:12px;">Tip: Upload one <code>.epk</code> to fix it, or select multiple <code>.epk</code> files to combine them into a single fixed package.</div>
+          <div id="drop-hint" class="muted" style="margin-top: 12px">
+            Tip: Upload one <code>.epk</code> to fix it, or select multiple
+            <code>.epk</code> files to combine them into a single fixed package.
+          </div>
         </div>
       </div>
       <div class="card">
@@ -34,7 +40,11 @@
         <div id="log" class="log">Ready.</div>
       </div>
       <footer>
-        &copy; 2025 <a href="mailto:alex@karlborgs.com">Alexander Schmidt</a>. This tool is provided as-is, without warranty of any kind. Use at your own risk.
+        <span class="copyright">© 2025 Alexander Schmidt.</span>
+        <span class="disclaimer"
+          >This tool is provided as-is, without warranty of any kind. Use at
+          your own risk.</span
+        >
       </footer>
     </div>
     <script src="script.js" type="module"></script>

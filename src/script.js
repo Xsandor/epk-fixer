@@ -17,7 +17,7 @@ import "./ui.js";
 // "Not allowed to load local resource" for absolute paths.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').then(reg => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
       // Registration successful
       console.log('ServiceWorker registered with scope:', reg.scope);
     }).catch(err => {

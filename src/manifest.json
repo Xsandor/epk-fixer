@@ -2,30 +2,30 @@
   "name": "EPK Fixer",
   "short_name": "EPK-Fixer",
   "description": "Fix and package EPK files in the browser",
-  "start_url": "/epk-fixer.html",
-  "scope": "/",
+  "start_url": "./epk-fixer.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0c0e13",
   "theme_color": "#111626",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-192-maskable.png",
+      "src": "icons/icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512-maskable.png",
+      "src": "icons/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
