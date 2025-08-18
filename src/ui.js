@@ -251,7 +251,6 @@ async function combineEpks(files) {
 const drop = document.getElementById("drop");
 const fileInput = document.getElementById("file");
 
-// Hints and descriptive text are provided in the HTML markup (see src/epk-fixer.html)
 ["dragenter", "dragover"].forEach((ev) =>
   drop.addEventListener(ev, (e) => {
     e.preventDefault();
@@ -264,19 +263,26 @@ const fileInput = document.getElementById("file");
     drop.classList.remove("drag");
   })
 );
-drop.addEventListener("drop", (e) => {
-  const files = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files : null;
-  if (files) {
-    handleFiles(files, { fixOne, combineMulti: combineEpks, autoDownload, singleOutNamer: () => suggestZipName() }).catch((err) => log("Error: " + err.message));
-  }
+
+// Build the options object for handleFiles when needed.
+const fileHandlerOptions = () => ({
+  fixOne,
+  combineMulti: combineEpks,
+  autoDownload
 });
+
+function processFiles(files) {
+  if (!files) return;
+  handleFiles(files, fileHandlerOptions()).catch((err) => log("Error: " + (err?.message || err)));
+}
+
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const files = e?.dataTransfer?.files ?? null;
+  processFiles(files);
+});
+
 fileInput.addEventListener("change", (e) => {
-  const files = e.target.files;
-  if (files) {
-    if (files.length > 1) {
-      combineEpks(files).catch((err) => log('Error: ' + (err?.message || err)));
-    } else {
-      handleFiles(files, { fixOne, combineMulti: combineEpks, autoDownload, singleOutNamer: () => suggestZipName() }).catch((err) => log("Error: " + err.message));
-    }
-  }
+  const files = e?.target?.files ?? null;
+  processFiles(files);
 });

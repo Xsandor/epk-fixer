@@ -2,8 +2,7 @@
 export async function handleFiles(files, {
   fixOne,
   combineMulti,
-  autoDownload,
-  singleOutNamer
+  autoDownload
 }) {
   const arr = Array.from(files || []);
   if (arr.length === 0) return;
