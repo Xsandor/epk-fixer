@@ -12,12 +12,14 @@ export async function handleFiles(files, {
     const res = await fixOne(file);
     if (res && res.blob && res.name && res.changed) {
       await autoDownload(res.blob, res.name);
+      window.umami.track("fix-single-epk");
     }
     return;
   }
   // For multiple files, delegate to combineMulti which should create a single .epk and trigger download
   if (typeof combineMulti === 'function') {
     await combineMulti(files);
+    window.umami.track("fix-multiple-epk", { fileCount: files.length });
     return;
   }
 }
