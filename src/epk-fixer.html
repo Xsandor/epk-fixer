@@ -31,19 +31,24 @@
         </p>
         <p class="muted">All processing happens locally in your browser.</p>
         <div id="drop" class="drop">
-          <strong>Drop .epk here</strong>
+          <strong>Drop file(s) here</strong>
           <br /><span class="muted">or</span><br />
-          <label class="btn" for="file">Choose file</label>
-          <input id="file" type="file" accept=".epk" multiple />
-          <div id="drop-hint" class="muted" style="margin-top: 12px">
-            Tip: Upload one <code>.epk</code> to fix it, or select multiple
-            <code>.epk</code> files to combine them into a single fixed package.
-          </div>
+          <label class="btn" for="file">Choose file(s)</label>
+          <input id="file" type="file" accept=".epk,.ed3,.ed4" multiple />
         </div>
+        <p class="muted" style="margin-top: 1rem">
+          <strong>Tip:</strong> Upload one <code>.epk</code> to fix it, or
+          multiple <code>.epk</code> files to combine them into a single fixed
+          package. It is also possible to upload one or several
+          <code>.ed3/.ed4</code> files to create a new <code>.epk</code>. Or
+          even provide a mix of <code>.epk</code> and
+          <code>.ed3/.ed4</code> files, this will also result in a
+          <code>.epk</code> that includes all provided files.
+        </p>
       </div>
       <div class="card">
         <h2>Log</h2>
-        <div id="log" class="log">Ready.</div>
+        <div id="log" class="log"></div>
       </div>
       <footer>
         <span class="copyright">© 2025 Alexander Schmidt.</span>

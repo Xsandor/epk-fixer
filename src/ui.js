@@ -8,6 +8,9 @@ if (!isCompatibleBrowser()) {
 }
 
 const BRAND = "EPK Fixer";
+const INNER_PACKAGE_NAME = "SM800A_Upgrade_Source.7z";
+const CERT_FILE_NAME = "cert.txt";
+const OUT_EPK_NAME = "combined.epk";
 
 // Detect standalone (PWA installed) mode
 function isStandalone() {
@@ -37,13 +40,15 @@ const sevenZip = await SevenZip({ print: () => { } });
 
 const logEl = document.getElementById("log");
 function log(msg) {
-  logEl.textContent += "\n" + msg;
+  logEl.textContent += logEl.textContent ? "\n" + msg : msg;
   logEl.scrollTop = logEl.scrollHeight;
 }
 
 const engineStatus = document.getElementById("engineStatus");
 engineStatus.textContent = "Engine: ready (7z-wasm)";
 engineStatus.style.background = "#1e3a1e";
+
+log("Ready, please provide file(s) for processing!")
 
 async function autoDownload(blob, outName, opts = {}) {
   const { maxDelay = 2000 } = opts;
@@ -90,9 +95,9 @@ export async function fixOne(file) {
     const args = ["x", "/in.epk", "-o/out", "-y", "-bb0"];
     await sevenZip.callMain(args);
     const list = sevenZip.FS.readdir("/out").filter((f) => f !== "." && f !== "..");
-    const certPath = list.find((p) => p.toLowerCase() === "cert.txt");
+    const certPath = list.find((p) => p.toLowerCase() === CERT_FILE_NAME);
     if (!certPath) {
-      log("⚠️ cert.txt not found. Returning original archive unchanged.");
+      log(`⚠️ ${CERT_FILE_NAME} not found. Returning original archive unchanged.`);
       return { name: file.name, blob: null, changed: false };
     }
     const certData = sevenZip.FS.readFile(`/out/${certPath}`);
@@ -101,12 +106,12 @@ export async function fixOne(file) {
     const changed = fixedCert !== certText;
     if (changed) {
       sevenZip.FS.writeFile(`/out/${certPath}`, new TextEncoder().encode(fixedCert));
-      log("Updated cert.txt: ensured trailing newline.");
-      try { sevenZip.FS.unlink("/fixed.epk"); } catch { }
-      const archiveArgs = ["a", "/fixed.epk", "-bb0"];
+      log(`Updated ${CERT_FILE_NAME}: ensured trailing newline.`);
+      try { sevenZip.FS.unlink(`/${OUT_EPK_NAME}`); } catch { }
+      const archiveArgs = ["a", `/${OUT_EPK_NAME}`, "-bb0"];
       for (const fname of list) archiveArgs.push(`/out/${fname}`);
       await sevenZip.callMain(archiveArgs);
-      const outBuf = sevenZip.FS.readFile("/fixed.epk");
+      const outBuf = sevenZip.FS.readFile(`/${OUT_EPK_NAME}`);
       const blob = new Blob([outBuf], { type: "application/octet-stream" });
       log("✅ Done. Ready for download.");
       // Cleanup FS: remove files we created under /out and the temporary /fixed.epk and /in.epk
@@ -118,11 +123,11 @@ export async function fixOne(file) {
         }
         try { sevenZip.FS.rmdir('/out'); } catch { }
       } catch { }
-      try { sevenZip.FS.unlink('/fixed.epk'); } catch { }
+      try { sevenZip.FS.unlink(`/${OUT_EPK_NAME}`); } catch { }
       try { sevenZip.FS.unlink('/in.epk'); } catch { }
       return { name: suggestOutName(file.name, "fixed"), blob, changed: true };
     } else {
-      log("✅ No change needed: cert.txt already ends with a newline.");
+      log(`✅ No change needed: ${CERT_FILE_NAME} already ends with a newline.`);
       return { name: file.name, blob: null, changed: false };
     }
   } catch (err) {
@@ -137,7 +142,7 @@ async function bufToHex(buffer) {
 }
 
 async function combineEpks(files) {
-  log(`Combining ${files.length} .epk files into one package`);
+  log(`Creating .epk from ${files.length} ${files.length > 1 ? 'files' : 'file'}.`);
   // We'll create a temp dir and extract each epk, then collect the inner SM800A_Upgrade_Source.7z contents
   const tmpRoot = '/combine';
   try { sevenZip.FS.rmdir(tmpRoot); } catch { }
@@ -147,19 +152,41 @@ async function combineEpks(files) {
   try { sevenZip.FS.rmdir(innerFilesDir); } catch { }
   try { sevenZip.FS.mkdir(innerFilesDir); } catch { }
 
-  // For each input epk, write it to /inX.epk, extract, find SM800A_Upgrade_Source.7z and extract its contents into innerFilesDir
+  // For each input: support two kinds of inputs
+  // - .epk files: extract and pull out the SM800A_Upgrade_Source.7z contents
+  // - .ed3 / .ed4 files: these are already "inner" files and should be copied directly
   let idx = 0;
   for (const f of Array.from(files)) {
     idx++;
+    const fname = f.name || `file${idx}`;
+    const lower = fname.toLowerCase();
+
+    // If the input is already an inner file (ed3/ed4), just write it into the innerFilesDir
+    if (lower.endsWith('.ed3') || lower.endsWith('.ed4')) {
+      try {
+        const dataBuf = new Uint8Array(await f.arrayBuffer());
+        let targetName = fname;
+        // avoid name collisions
+        if (sevenZip.FS.readdir(innerFilesDir).includes(fname)) {
+          targetName = `${idx}_${fname}`;
+        }
+        sevenZip.FS.writeFile(`${innerFilesDir}/${targetName}`, dataBuf);
+      } catch (e) {
+        log(`⚠️ Failed to add inner file ${fname}: ${e?.message || e}`);
+      }
+      continue;
+    }
+
+    // Otherwise assume it's an .epk (or another archive) that needs extraction
     const inPath = `${tmpRoot}/in${idx}.epk`;
     try { sevenZip.FS.unlink(inPath); } catch { }
     const buf = new Uint8Array(await f.arrayBuffer());
     sevenZip.FS.writeFile(inPath, buf);
     await sevenZip.callMain(["x", inPath, `-o${tmpRoot}/out${idx}`, "-y", "-bb0"]);
     const list = sevenZip.FS.readdir(`${tmpRoot}/out${idx}`).filter(x => x !== '.' && x !== '..');
-    const innerName = list.find(p => p === 'SM800A_Upgrade_Source.7z');
+    const innerName = list.find(p => p === INNER_PACKAGE_NAME);
     if (!innerName) {
-      log(`⚠️ File ${f.name} missing SM800A_Upgrade_Source.7z — skipping`);
+      log(`⚠️ File ${f.name} missing ${INNER_PACKAGE_NAME} — skipping`);
       continue;
     }
     // read the inner 7z and write to FS to extract
@@ -185,7 +212,7 @@ async function combineEpks(files) {
   }
 
   // Now create a new SM800A_Upgrade_Source.7z in FS from files in innerFilesDir
-  const combinedInnerPath = `${tmpRoot}/SM800A_Upgrade_Source.7z`;
+  const combinedInnerPath = `${tmpRoot}/${INNER_PACKAGE_NAME}`;
   try { sevenZip.FS.unlink(combinedInnerPath); } catch { }
   const innerListFinal = sevenZip.FS.readdir(innerFilesDir).filter(x => x !== '.' && x !== '..');
   if (innerListFinal.length === 0) {
@@ -200,19 +227,27 @@ async function combineEpks(files) {
   // Compute SHA256 of combined inner 7z
   const hashBuffer = await crypto.subtle.digest('SHA-256', combinedBuf);
   const hashHex = await bufToHex(hashBuffer);
-  const certText = `${hashHex} SM800A_Upgrade_Source.7z\n`;
-  sevenZip.FS.writeFile(`${tmpRoot}/cert.txt`, new TextEncoder().encode(certText));
+  const certText = `${hashHex} ${INNER_PACKAGE_NAME}\n`;
+  sevenZip.FS.writeFile(`${tmpRoot}/${CERT_FILE_NAME}`, new TextEncoder().encode(certText));
 
   // Create outer epk (7z archive) with SM800A_Upgrade_Source.7z and cert.txt
-  try { sevenZip.FS.unlink('/combined.epk'); } catch { }
+  try { sevenZip.FS.unlink(`/${OUT_EPK_NAME}`); } catch { }
   // write the combined inner buffer into FS at a path where 7z can include it
-  sevenZip.FS.writeFile(`${tmpRoot}/SM800A_Upgrade_Source.7z`, combinedBuf);
-  await sevenZip.callMain(["a", "/combined.epk", `${tmpRoot}/SM800A_Upgrade_Source.7z`, `${tmpRoot}/cert.txt`, "-y", "-bb0"]);
-  const outBuf = sevenZip.FS.readFile('/combined.epk');
+  sevenZip.FS.writeFile(`${tmpRoot}/${INNER_PACKAGE_NAME}`, combinedBuf);
+  await sevenZip.callMain(["a", `/${OUT_EPK_NAME}`, `${tmpRoot}/${INNER_PACKAGE_NAME}`, `${tmpRoot}/${CERT_FILE_NAME}`, "-y", "-bb0"]);
+  const outBuf = sevenZip.FS.readFile(`/${OUT_EPK_NAME}`);
 
-  const outName = `EPK_Package_${(new Date()).toISOString().replace(/[:.]/g, '-').replace(/T/, '_').slice(0, 19)}.epk`;
+  let outName;
+  if (files && files.length === 1 && files[0] && files[0].name) {
+    // Use the single input file's base name, but ensure .epk extension
+    const original = files[0].name;
+    const base = original.replace(/\.[^.]+$/, '');
+    outName = `${base}.epk`;
+  } else {
+    outName = `EPK_Package_${(new Date()).toISOString().replace(/[:.]/g, '-').replace(/T/, '_').slice(0, 19)}.epk`;
+  }
   await autoDownload(new Blob([outBuf], { type: 'application/octet-stream' }), outName);
-  log('✅ Combined EPK ready for download: ' + outName);
+  log('✅ .epk ready for download: ' + outName);
 
   // Cleanup FS: remove combine temp files and combined.epk
   try {
@@ -241,9 +276,9 @@ async function combineEpks(files) {
     try { sevenZip.FS.unlink(`${tmpRoot}/in${i}.epk`); } catch { }
   }
   try { sevenZip.FS.unlink(combinedInnerPath); } catch { }
-  try { sevenZip.FS.unlink(`${tmpRoot}/SM800A_Upgrade_Source.7z`); } catch { }
-  try { sevenZip.FS.unlink(`${tmpRoot}/cert.txt`); } catch { }
-  try { sevenZip.FS.unlink('/combined.epk'); } catch { }
+  try { sevenZip.FS.unlink(`${tmpRoot}/${INNER_PACKAGE_NAME}`); } catch { }
+  try { sevenZip.FS.unlink(`${tmpRoot}/${CERT_FILE_NAME}`); } catch { }
+  try { sevenZip.FS.unlink(`${tmpRoot}/${OUT_EPK_NAME}`); } catch { }
   try { sevenZip.FS.rmdir(tmpRoot); } catch { }
 }
 
